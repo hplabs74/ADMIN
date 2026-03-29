@@ -1,7 +1,63 @@
 <?php
 require_once 'config.php';
+header('Content-Type: application/json'); // Jelezzük, hogy JSON-t küldünk vissza
 
-// PHPMailer manuális betöltése (Módosítsd az útvonalat, ha máshová tetted!)
+
+/* START -- ADMIN SECURITY => OUR PRICE PLAN SELECTABLE TABLE RECORD */
+
+// 1. ADATBÁZIS KAPCSOLAT (Ezt pótold, ha nincs benne)
+require_once 'db_connection.php'; 
+
+// 2. BEÉRKEZŐ JSON ADATOK BEOLVASÁSA
+$data = json_decode(file_get_contents('php://input'), true);
+
+// 3. TÁBLÁZAT KEZELÉSE (Ezt szúrd be ide)
+if (isset($data['action'])) {
+    $table = $data['table']; // Ez jön a select-ből (pl. SUBSCRIPTION_PRICE_PLAN_1)
+
+    // BIZTONSÁGI ELLENŐRZÉS: Csak ezeket a táblákat engedjük meg
+    $allowed_tables = ['SUBSCRIPTION_PRICE_PLAN_1', 'SUBSCRIPTION_PRICE_PLAN_2', 'SUBSCRIPTION_PRICE_PLAN_3', 'SUBSCRIPTION_PRICE_PLAN_4'];
+    
+    if (!in_array($table, $allowed_tables)) {
+        echo json_encode(['success' => false, 'error' => 'Érvénytelen táblanév!']);
+        exit;
+    }
+
+    // --- ÚJ SOR HOZZÁADÁSA ---
+    if ($data['action'] === 'insert') {
+        $poor   = $data['poor'];
+        $middle = $data['middle'];
+        $rich   = $data['rich'];
+        $cpu    = $data['cpu'];
+
+        // Itt a táblanevet közvetlenül illesztjük be, az értékeket pedig biztonságosan (prepared statement)
+
+        $query = "INSERT INTO `$table` (poor_price_in_usd, middle_price_in_usd, rich_price_in_usd, how_much_max_kg_cpu_can_buy) VALUES (?, ?, ?, ?)"; // ez egy rekord felvétel ha a tábla név változóban
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("ssss", $poor, $middle, $rich, $cpu);
+        
+        if ($stmt->execute()) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => $conn->error]);
+        }
+        exit;
+    }
+
+    // --- ADATOK LEKÉRÉSE ---
+    if ($data['action'] === 'fetch') {
+        $query = "SELECT * FROM `$table` ORDER BY created_at DESC";
+        $result = $conn->query($query);
+        $rows = $result->fetch_all(MYSQLI_ASSOC);
+        
+        echo json_encode(['success' => true, 'data' => $rows]);
+        exit;
+    }
+}
+/* END -- ADMIN SECURITY => OUR PRICE PLAN SELECTABLE TABLE RECORD */
+
+
+// START -- PHPMailer manuális betöltése (Módosítsd az útvonalat, ha máshová tetted!)
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\SMTP;
@@ -10,7 +66,10 @@ require 'PHPMailer/PHPMailer/Exception.php';
 require 'PHPMailer/PHPMailer/PHPMailer.php';
 require 'PHPMailer/PHPMailer/SMTP.php';
 
+// END -- PHPMailer manuális betöltése (Módosítsd az útvonalat, ha máshová tetted!)
 
+
+/* START -- PART 1 --- TAB 1 MOBIL NUMBER VALIDATION PROCESS */
 header('Content-Type: application/json');
 
 $input = json_decode(file_get_contents('php://input'), true);
@@ -63,8 +122,10 @@ if ($action === 'requestCode') {
         echo json_encode($response);
         exit;
     }
+
+/* END -- PART 1 --- TAB 1 MOBIL NUMBER VALIDATION PROCESS */
     
-    // --- PHPMailer Küldés ---
+    // START --- PHPMailer SENDING
     $mail = new PHPMailer(true);
 
     try {
@@ -85,7 +146,7 @@ if ($action === 'requestCode') {
         $mail->isHTML(true);
         $mail->Subject = 'Your Verification Code';
         $mail->Body    = "Your security code: <b style='font-size: 20px;'>$code</b><br><br>This code expires in 3 minutes.";
-        $mail->AltBody = "Your verification code is: $code. It expires in 3 minutes.";
+        $mail->AltBody = "Your verification code is: $code. It expires first time in 2 minutes, if you are late with first time with 8 digit code, second time you have 5 minutes.";
         
         $mail->send();
         echo json_encode(['success' => true, 'expires' => $expires]);
@@ -99,9 +160,9 @@ if ($action === 'requestCode') {
     }
     exit;
     
-
+// END --- PHPMailer SENDING
 /*
-    // Email küldés (egyszerű mail)
+    // Email küldés (egyszerű mail, klasszikus de védtelen módszer )
     $subject = "Your verification code";
     $message = "Your verification code is: $code\nIt expires in 2 minutes.";
     $headers = "From: office@goldenantspowers.com\r\n";
@@ -114,7 +175,7 @@ if ($action === 'requestCode') {
     
 }
 
-
+/* START -- PART 2 --- TAB 1 MOBIL NUMBER VALIDATION PROCESS */
 if ($action === 'verifyCode') {
     $mobile = $input['mobile'] ?? '';
     $code = $input['code'] ?? '';
@@ -168,3 +229,5 @@ if ($action === 'verifyCode') {
 
 // Ha nem ismert action
 echo json_encode($response);
+
+/* END -- PART 2 --- TAB 1 MOBIL NUMBER VALIDATION PROCESS */
