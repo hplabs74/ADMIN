@@ -154,9 +154,11 @@
                                         <table id="dataTable">
                                             <thead>
                                                 <tr>
+                                                    <!--
                                                     <th width="50">
                                                         <input type="checkbox" id="selectAll">
                                                     </th>
+                                                    -->
                                                     <th width="50">ID</th>
                                                     <th>POOR ($)</th>
                                                     <th>MIDDLE ($)</th>
