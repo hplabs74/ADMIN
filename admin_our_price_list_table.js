@@ -805,6 +805,7 @@ async function saveEdit(id, field, newValue) {
 }
 
 // ÚJ SOR HOZZÁADÁSA (INSERT - A Modal-ból)
+
 document.getElementById('addForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = {
