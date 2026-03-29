@@ -828,3 +828,29 @@ document.getElementById('addForm').addEventListener('submit', async (e) => {
         console.error("Hiba a hozzáadáskor");
     }
 });
+
+// --- ESEMÉNYKEZELŐK ÖSSZEKÖTÉSE ---
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Az "Add New Row" gomb aktiválása
+    const addBtn = document.querySelector('.addRowBtn');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
+            console.log("Add gomb megnyomva");
+            addNewRow();
+        });
+    }
+
+    // 2. A Price Plan választó (Select) aktiválása
+    const planSelect = document.getElementById('planSelector'); // 'subscription-plan'
+    if (planSelect) {
+        planSelect.addEventListener('change', (e) => {
+            console.log("Terv kiválasztva:", e.target.value);
+            renderTable(); // Újrarajzolja a táblát a választás alapján
+        });
+    }
+
+    // Első betöltéskor is rajzoljuk ki a táblát (ha van alapértelmezett adat)
+    renderTable();
+});
+
