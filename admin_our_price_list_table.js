@@ -833,7 +833,7 @@ document.getElementById('addForm').addEventListener('submit', async (e) => {
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Az "Add New Row" gomb aktiválása
-    const addBtn = document.querySelector('.addRowBtn');
+    const addBtn = document.querySelector('.addRowBtn'); // '.btn-add'
     if (addBtn) {
         addBtn.addEventListener('click', () => {
             console.log("Add gomb megnyomva");
